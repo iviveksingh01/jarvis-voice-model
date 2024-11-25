@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis Chatbot</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>JARVIS</h2>
+            <p>I'm JARVIS. How may I help you?</p>
+        </div>
+        <div class="video-container">
+            <video id="Jarvis-video" autoplay loop muted>
+                <source src="JARVIS START UP.mp4" type="video/mp4">
+            </video>
+        </div>
+        <div class="chat-window" id="chat-window">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div class="chat-voice">
+            <button onclick="startListening()">🎤</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
+<style>
+    body {
+    font-family: Arial, sans-serif;
+    background: url('vjarvis.png');
+    background-size: cover;
+    background-color: #121212;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.chat-container {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.chat-header {
+    background-color: #252525;
+    padding: 15px;
+    text-align: center;
+}
+
+.video-container {
+    position: relative;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+}
+
+.video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.chat-window {
+    height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #2e2e2e;
+}
+
+.chat-input, .chat-voice {
+    display: flex;
+    border-top: 1px solid #3e3e3e;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background-color: #2e2e2e;
+    color: #fff;
+}
+
+.chat-input button, .chat-voice button {
+    padding: 10px;
+    border: none;
+    background-color: #3e3e3e;
+    color: #fff;
+    cursor: pointer;
+}
+
+</style>
+<script>
+
+const chatWindow = document.getElementById('chat-window');
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.continuous = false;
+recognition.interimResults = false;
+recognition.lang = 'en-US';
+
+recognition.onresult = (event) => {
+    const userInput = event.results[0][0].transcript.toLowerCase();
+    appendMessage('user', userInput);
+    handleVoiceCommand(userInput);
+};
+
+recognition.onerror = (event) => {
+    console.error('Speech recognition error detected: ' + event.error);
+};
+
+function startListening() {
+    recognition.start();
+}
+
+function sendMessage() {
+    const userInput = document.getElementById('user-input').value;
+    if (userInput.trim() === '') return;
+
+    appendMessage('user', userInput);
+    document.getElementById('user-input').value = '';
+
+    handleVoiceCommand(userInput);
+}
+
+function appendMessage(sender, message) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add(sender);
+    messageElement.innerText = message;
+    chatWindow.appendChild(messageElement);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    if (sender === 'bot') {
+        const utterance = new SpeechSynthesisUtterance(message);
+        speechSynthesis.speak(utterance);
+    }
+}
+
+function handleVoiceCommand(userInput) {
+    if (userInput.includes('hello jarvis')) {
+        appendMessage('bot', 'Hello sir, how can I assist you?');
+    } else if (userInput.includes('jarvis open calculator')) {
+        appendMessage('bot', 'Opening calculator...');
+        openCalculator();
+    } else if (userInput.includes('who are you jarvis')) {
+        appendMessage('bot', 'I do not have any self-identity. My body has been created by Vivek sir, and I am Vivek sir\'s assistant.');
+    } else if (userInput.includes('jarvis tell me weather report')) {
+            appendMessage('bot', 'Fetching current weather...');
+            fetchWeather();
+    } else if (userInput.includes('how are you jarvis')) {
+        appendMessage('bot', 'I am like pizza sometimes cheesy sometimes spicy. but always treat to have around.');
+    } else if (userInput.includes('suggest me some trending movies jarvis')){
+        appendMessage('bot', ' ok sir here is your favorite movies list ');
+        suggestTrendingMovies();
+    
+
+    
+    } else {
+        appendMessage('bot', generateBotResponse(userInput));
+    }
+    function suggestTrendingMovies() {
+    const apiKey = 'https://api.themoviedb.org/3/movie/550?api_key=6ea03192ccf65041a4e1b8a12d386362'; 
+    const apiUrl = `https://api.themoviedb.org/3/trending/movie/week`;
+
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const movies = data.results.slice(0, 5); 
+            movies.forEach(movie => {
+                appendMessage('bot', `${movie.title} (${movie.release_date.split('-')[0]}) - ${movie.overview}`);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching trending movies:', error);
+            appendMessage('bot', 'Sorry, I couldn\'t fetch trending movies at the moment.');
+        });
+}
+
+}
+function fetchWeather() {
+        const apiKey = 'https://openweathermap.org/'; // Replace with your actual OpenWeatherMap API key
+        const city = 'India'; // Example: replace with the city you want weather for
+        const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API key}`;
+
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const weatherDescription = data.weather[0].description;
+                const temperature = data.main.temp;
+                appendMessage('bot', `Current weather in ${city}: ${weatherDescription}. Temperature: ${temperature}°C`);
+            })
+            .catch(error => {
+                console.error('Error fetching weather:', error);
+                appendMessage('bot', 'Sorry, I couldn\'t fetch the weather at the moment.');
+            });
+        }
+
+
+
+
+function openCalculator() {
+    fetch('http://localhost:3000/open-calculator', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error('Error:', error));
+}
+
+function generateBotResponse(userInput) {
+    const responses = {
+        'hello': 'Hello! How can I assist you today?',
+        'how are you': 'I am just a bot, but I am functioning as expected!',
+        'help': 'Sure, I am here to help. What do you need assistance with?',
+        'bye': 'Goodbye! Have a great day!'
+    };
+
+    return responses[userInput.toLowerCase()] || "I'm sorry, I didn't understand that.";
+}
+
+</script>
